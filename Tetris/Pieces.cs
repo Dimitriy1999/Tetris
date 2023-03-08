@@ -9,6 +9,7 @@ namespace Tetris
     internal class Pieces
     {
         public static List<bool[,]> AllPieces = new List<bool[,]>();
+        public static bool[,] PlacedPieces = new bool[100, 100];
 
         public static void Initalize()
         {
@@ -51,14 +52,16 @@ namespace Tetris
             { false, false, false, false}
         };
 
+        //remember to change index from 0 to randomNumber.
         public static bool[,] GetRandomPiece()
         {
             Random random = new Random();
             int randomNumber = random.Next(0, Pieces.AllPieces.Count);
-            return Pieces.AllPieces[1];
+            return Pieces.AllPieces[0];
         }
         public static void RenderPiece(bool[,] pieceData, IPoint point, ref List<IPoint> points)
         {
+            points.Clear();
             int startX = point.X;
             int startY = point.Y;
             int yOffset = 0;
