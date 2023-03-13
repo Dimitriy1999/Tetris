@@ -8,72 +8,62 @@ namespace Tetris
 {
     public class Map
     {
-        int mapWidth;
-        int mapHeight;
+        public static int Width;
+        public static int Height;
+
+        private const char mapChar = 'X';
 
         public Map(int mapWidth, int mapHeight)
         {
-            this.mapWidth = mapWidth;
-            this.mapHeight = mapHeight;
+            Map.Width = mapWidth;
+            Map.Height = mapHeight;
         }
 
-        public Map()
+        public Map()                            
         {
-            mapWidth = 20;
-            mapHeight = 40;
+            Map.Width = 20;
+            Map.Height = 40;
         }
 
-        public void CreateMap(Point point)
+        public void CreateMap()
         {
-            BottomBar(point);
-            TopBar(point);
-            LeftSideBar(point);
-            RightSideBar(point);
+            TopBar(Point.StartingPosition);
+            BottomBar(Point.StartingPosition);
+            LeftSideBar(Point.StartingPosition);
+            RightSideBar(Point.StartingPosition);
         }
+
         private void TopBar(Point point)
         {
-            point.UpdatePosition(mapWidth, mapHeight);
-            point.SetCursorPosition(point);
-            for (int i = 0; i < mapWidth; i++)
+            for (int i = 0; i < Width; i++)
             {
-                point.UpdatePosition(-1, 0, 'X');
+                Utility.SetCursorPosition(point.X - i, point.Y, mapChar);
             }
         }
 
         private void BottomBar(Point point)
         {
-            for (int i = 0; i < mapWidth; i++)
+            for (int i = 0; i < Width; i++)
             {
-                point.UpdatePosition(-1, 0, 'X');
+                Utility.SetCursorPosition(point.X - i, point.Y + Height, mapChar);
             }
         }
 
+
         private void LeftSideBar(Point point)
         {
-            for (int i = 0; i < mapHeight - 1; i++)
+            for (int i = 0; i <= Height; i++)
             {
-                point.UpdatePosition(0, -1, 'X');
+                Utility.SetCursorPosition(point.X - Width, point.Y + i, mapChar);
             }
         }
 
         private void RightSideBar(Point point)
         {
-            point.UpdatePosition(mapWidth - 1, mapHeight - 1);
-            for (int i = 0; i < mapHeight - 1; i++)
+            for (int i = 0; i <= Height; i++)
             {
-                point.UpdatePosition(0, -1, 'X');
+                Utility.SetCursorPosition(point.X, point.Y + i, mapChar);
             }
         }
-
-        public int GetMapWidth()
-        {
-            return mapWidth;
-        }
-
-        public int GetMapHeight()
-        {
-            return mapHeight;
-        }
-
     }
 }

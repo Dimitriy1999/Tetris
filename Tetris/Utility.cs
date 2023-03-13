@@ -10,24 +10,11 @@ namespace Tetris
 {
     internal class Utility
     {
-        public static void CheckPoint(IPoint point, int mapWidth, int mapHeight)
+        public static bool DetectCollision(List<Point> points)
         {
-            bool xOutOfRange = point.X >= Point.StartingX - 2 || point.X <= Point.StartingX - mapWidth;
-            bool yOutOfRange = point.Y <= Point.StartingY || point.Y >= Point.StartingY + mapHeight;
-
-            if (xOutOfRange || yOutOfRange)
+            foreach (Point point in points)
             {
-                throw new Exception($"The point ({point.X}, {point.Y}) is outside of the game's boundaries. " +
-                                 $"The X coordinate should be between {Point.StartingX - mapWidth + 1} and {Point.StartingX}. " +
-                                 $"The Y coordinate should be between {Point.StartingY} and {Point.StartingY + mapHeight}.");
-            }
-        }
-
-        public static bool DetectCollision(List<IPoint> points, int mapHeight)
-        {
-            foreach (var point in points)
-            {
-                bool yOutOfRange = IsYPointOutOfRange(mapHeight, point);
+                bool yOutOfRange = IsYPointOutOfRange(point);
 
                 bool isPieceBelow = Pieces.PlacedPieces[point.X, point.Y + 1];
                 if (yOutOfRange || isPieceBelow)
@@ -39,46 +26,88 @@ namespace Tetris
             return false;
         }
 
-        private static void AddPlacedPiecePositions(List<IPoint> points)
+        private static void AddPlacedPiecePositions(List<Point> points)
         {
-            foreach (var point in points)
+            foreach (Point point in points)
             {
                 Pieces.PlacedPieces[point.X, point.Y] = true;
             }
         }
 
-        public static bool IsYPointOutOfRange(int mapHeight, IPoint point)
+        public static bool IsYPointOutOfRange(Point point)
         {
-            return point.Y <= Point.StartingY || point.Y >= Point.StartingY + mapHeight - 1;
+            return point.Y <= Point.StartingY || point.Y >= Point.StartingY + Map.Height - 1;
         }
 
-        public static bool IsXPointOutOfRange(int mapWidth, int x)
+        public static bool IsXPointOutOfRange(int x)
         {
-            return x >= Point.StartingX - 1 || x <= Point.StartingX - mapWidth;
+            return x >= Point.StartingX || x <= Point.StartingX - Map.Width;
         }
 
-        public static void GoToStartingPoint(IPoint point, int mapWidth, int mapHeight)
+        public static bool IsXPointOutOfRange(int x, out int currentX)
         {
-            IPoint newPoint = point;
-            newPoint.SetPositionToStartingPoint();
-            newPoint.UpdatePosition(-mapWidth, mapHeight);
-        }
-
-        public static void ClearCurrentPoint(IPoint point)
-        {
-            point.UpdatePosition(0, 0, ' ');
-        }
-
-        public static void ClearPiece(List<IPoint> points)
-        {
-            foreach (var point in points)
+            currentX = 0;
+            if (x >= Point.StartingX)
             {
-                ClearCurrentPoint(point);
+                currentX = 1;
+                return true;
+            }
+            else if(x <= Point.StartingX - Map.Width)
+            {
+                currentX = -1;
+                return true;
+            }
+            return false;
+        }
+
+
+        public static void ClearPiece(List<Point> points)
+        {
+            foreach (Point point in points)
+            {
+                ClearCurrentPosition(point);
             }
         }
 
-        public static void ClearCurrentPoint()
+        public static void SetCursorPosition(int x, int y)
         {
+            Console.SetCursorPosition(x, y);
+        }
+
+        public static void SetCursorPosition(int x, int y, char character)
+        {
+            Console.SetCursorPosition(x, y);
+            Console.Write(character);
+        }
+
+
+        public static void DrawCharacter(int x, int y, char character)
+        {
+            SetCursorPosition(x, y);
+            Console.Write(character);
+        }
+
+        public static void DrawCharacter(Point point, char character)
+        {
+            SetCursorPosition(point.X, point.Y);
+            Console.Write(character);
+        }
+
+
+        public static void SetPosition(int x, int y)
+        {
+            SetCursorPosition(x, y);
+        }
+
+        public static void ClearCurrentPosition(Point point)
+        {
+            SetCursorPosition(point.X, point.Y);
+            Console.Write(' ');
+        }
+
+        public static void ClearCurrentPosition(int x, int y)
+        {
+            SetCursorPosition(x, y);
             Console.Write(' ');
         }
 

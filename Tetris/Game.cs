@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,163 +10,242 @@ namespace Tetris
 {
     public class Game
     {
-        int windowWidth = Console.WindowWidth / 2;
-        int windowHeight = (Console.WindowHeight / 2) - 10;
-        int mapHeight;
-        int mapWidth;
         bool[,] piece;
-        int currentX;
+
+        float timeForPiece = 0.5f;
 
         Map map;
         Timer time;
-        Timer pieceLandedTimer;
-        List<IPoint> points;
-        GameField gameField;
+        GameField game;
+
+        public static char PieceChar = '*';
+
+
         public Game()
         {
-            points = new();
             map = new(20, 20);
             time = new Timer();
-            pieceLandedTimer = new Timer();
-            gameField = new();
-            mapHeight = map.GetMapHeight();
-            mapWidth = map.GetMapWidth();
+            game = new();
             Pieces.Initalize();
         }
 
         public void Run()
         {
             Console.CursorVisible = false;
-            Point point = Initialize();
+            InitializeGame();
+            PrintGameTutorialTexts();
             while (true)
             {
-                gameField.RemoveFilledRows(map, point);
-                if (time.DurationPassed(0.5f))
+                game.ClearRowsThatAreFull();
+
+                if (time.DurationPassed(timeForPiece))
                 {
-                    MoveDown();
+                    MovePieceDown();
                 }
 
-                //To Do: When an object collides give at least 1-2 seconds so that we can rotate around for a bit
-                if (Utility.DetectCollision(points, mapHeight))
+                List<Point> pointsList = Point.GetListOfPoints(piece, GameField.FirstPiecePosition);
+                if (Utility.DetectCollision(pointsList))
                 {
-                    points.Clear();
-                    GenerateNewPiece(point);
+                    if (DidWeLose(pointsList)) break;
+
+                    ResetTimeForPiece();
+                    GenerateNewPiece();
+                    GameField.FirstPiecePosition = GameField.PieceSpawnPoint.Clone();
                 }
                 ProcessKeys();
             }
+            PrintLostMessage();
         }
 
-        //This function just fills out rows. 
+        private static void PrintLostMessage()
+        {
+            Console.Clear();
+            Utility.SetPosition(30, 15);
+            Console.WriteLine("You Lost! Restart The Application To Play Again.");
+            Console.ReadLine();
+        }
+
+        private bool DidWeLose(List<Point> points)
+        {
+            return points.Any(point => point.Y == GameField.PieceSpawnPoint.Y);
+        }
+
+        private void PrintGameTutorialTexts()
+        {
+            string welcomeMessage = "Welcome To Tetris";
+            Utility.SetCursorPosition(Point.StartingPosition.X - welcomeMessage.Length - 1, Point.StartingY - 2);
+            Console.Write(welcomeMessage);
+            Utility.SetCursorPosition(Point.StartingPosition.X + 5, 5);
+            Console.Write("Press \"A\" or \"D\" to Move Your PieceChar");
+            Utility.SetCursorPosition(Point.StartingPosition.X + 5, 6);
+            Console.Write("Press \"Space\" To Instantly Put Your PieceChar Down");
+            Utility.SetCursorPosition(Point.StartingPosition.X + 5, 7);
+            Console.Write("Press \"L\" To Rotate Your PieceChar");
+
+
+
+        }
+
+        private void ResetTimeForPiece()
+        {
+            timeForPiece = 0.5f;
+        }
+
         private void FillRow()
         {
             Point point = new Point(40, 24);
-            for (int i = 41; i <= 58; i++)
+            for (int i = 41; i <= 59; i++)
             {
                 Pieces.PlacedPieces[i, 24] = true;
-                point.SetPosition(i, 24);
-                point.UpdatePosition(0, 0, '*');
+                Utility.SetPosition(i, 24);
+                Utility.DrawCharacter(i, 24, '*');
                 if (i % 2 == 0)
                 {
                     Pieces.PlacedPieces[i, 23] = true;
-                    point.SetPosition(i, 23);
-                    point.UpdatePosition(0, 0, '*');
+                    Utility.SetPosition(i, 23);
+                    Utility.DrawCharacter(i, 23, '*');
+                    Pieces.PlacedPieces[i, 22] = true;
+                    Utility.SetPosition(i, 22);
+                    Utility.DrawCharacter(i, 22, '*');
+
                 }
             }
         }
 
-        private Point Initialize()
+        private void InitializeGame()
         {
-            Point point = new(windowWidth, windowHeight);
-            point.UpdatePosition(0, 0);
-            map.CreateMap(point);
-            SetSpawnPosition(point);
-            return point;
+            map.CreateMap();
+            GenerateNewPiece();
         }
 
-        private void MovePieceWithKeys(ConsoleKeyInfo keyPressed)
+        private int MovePieceWithKeys(ConsoleKeyInfo keyPressed)
         {
+            int currentX = 0;
             switch (keyPressed.Key)
             {
                 case ConsoleKey.A:
                     currentX = -1;
                     break;
-
+                case ConsoleKey.L:
+                    TurnPiece();
+                    break;
                 case ConsoleKey.D:
                     currentX = 1;
                     break;
-
+                case ConsoleKey.Spacebar:
+                    timeForPiece = 0;
+                    break;
                 default:
                     currentX = 0;
                     break;
             }
+            return currentX;
         }
 
-        private void MoveDown()
+        private void MovePieceDown()
         {
-            for (int i = points.Count - 1; i >= 0; i--)
-            {
-                IPoint point = points[i];
+            List<Point> listOfPoints = Point.GetListOfPoints(piece, GameField.FirstPiecePosition);
 
-                Utility.ClearCurrentPoint(point);
-                point.UpdatePosition(0, 1, '*');
+            GameField.FirstPiecePosition.Y += 1;
+
+            Utility.ClearPiece(listOfPoints);
+            foreach (var point in listOfPoints)
+            {
+                point.Y += 1;
+                Utility.DrawCharacter(point, PieceChar);
             }
         }
 
-        private void MovePieceLeftAndRight()
+        private void GenerateNewPiece()
         {
-            if (!gameField.CheckHorizontalMovementValidity(points, mapWidth, currentX)) return;
-
-            Utility.ClearPiece(points);
-
-            foreach (var point in points)
-            {
-                point.UpdatePosition(currentX, 0, '*');
-            }
+            SetSpawnPosition();
         }
 
-        private void GenerateNewPiece(IPoint point)
-        {
-            SetSpawnPosition(point);
-        }
-
-        private void SetSpawnPosition(IPoint point)
+        private void SetSpawnPosition()
         {
             bool[,] pieceData = Pieces.GetRandomPiece();
             piece = pieceData;
-            Utility.GoToStartingPoint(point, mapWidth / 2 + 2, 1);
-            Pieces.RenderPiece(pieceData, point, ref points);
+            Pieces.RenderPiece(pieceData, GameField.PieceSpawnPoint);
         }
 
         public void ProcessKeys()
         {
             if (!Console.KeyAvailable) return;
 
-            var KeyPressed = Console.ReadKey(true);
-            MovePieceWithKeys(KeyPressed);
-            MovePieceLeftAndRight();
+            ConsoleKeyInfo keyPressed = Console.ReadKey(true);
+            int currentX = MovePieceWithKeys(keyPressed);
+            MovePieceLeftAndRight(currentX);
         }
 
-        //Function works just add functionality later.
+        private void MovePieceLeftAndRight(int currentX)
+        {
+            var pointList = Point.GetListOfPoints(piece, GameField.FirstPiecePosition);
+            if (!game.CanWeMoveLeftOrRight(pointList, currentX)) return;
+
+            Utility.ClearPiece(pointList);
+
+            GameField.FirstPiecePosition.X += currentX;
+
+            foreach (var point in pointList)
+            {
+                point.X += currentX;
+                Utility.DrawCharacter(point, PieceChar);
+            }
+        }
+
         private void TurnPiece()
         {
-            int print = 0;
-            bool[,]? pieceCopy = new bool[4, 4];
+            if (Pieces.IgnoreRotationList.Contains(piece)) return;
+
+            List<Point> currentPoints = Point.GetListOfPoints(piece, GameField.FirstPiecePosition);
+
+            Utility.ClearPiece(currentPoints);
+
+            bool[,] pieceCopy = new bool[4, 4];
+
             for (int y = 0; y <= 3; y++)
             {
                 for (int x = 0; x <= 3; x++)
                 {
                     bool condition = piece[y, x];
                     pieceCopy[x, 3 - y] = condition;
-                    if (condition)
-                    {
-                        Console.SetCursorPosition(1, 5 + print);
-                        print++;
-                        Console.WriteLine($"previous : ({x} , {y}) | After : ({3 - y}, {x})");
-                    }
                 }
             }
-            Utility.ClearPiece(points);
-            Pieces.RenderPiece(pieceCopy, points[0], ref points);
+            List<Point> points = Point.GetListOfPoints(pieceCopy, GameField.FirstPiecePosition);
+            CheckRotatedPiece(points);
+            Pieces.RenderPiece(pieceCopy, GameField.FirstPiecePosition);
+            piece = pieceCopy;
+        }
+
+        private void CheckRotatedPiece(List<Point> points)
+        {
+            while (true)
+            {
+                var shiftDirection = CheckInRange(points);
+                if (shiftDirection == 0) return;
+
+                ShiftPieces(points, shiftDirection);
+            }
+        }
+
+        private static void ShiftPieces(List<Point> pointList, int currentDirection)
+        {
+            GameField.FirstPiecePosition.X -= currentDirection;
+            foreach (Point point in pointList)
+            {
+                point.X -= currentDirection;
+            }
+        }
+
+        private int CheckInRange(List<Point> pointList)
+        {
+            foreach (Point point in pointList)
+            {
+                int currentDirection;
+
+                if (Utility.IsXPointOutOfRange(point.X, out currentDirection)) return currentDirection;
+            }
+            return 0;
         }
     }
 

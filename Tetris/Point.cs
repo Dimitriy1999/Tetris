@@ -6,20 +6,24 @@ using System.Threading.Tasks;
 
 namespace Tetris
 {
-    public class Point : IPoint
+    public class Point
     {
+
         public int X { get; set; }
         public int Y { get; set; }
 
         public static int StartingX
         {
             get { return Console.WindowWidth / 2; }
-            private set { }
         }
         public static int StartingY
         {
             get { return Console.WindowHeight / 2 - 10; }
-            private set { }
+        }
+
+        public static Point StartingPosition
+        {
+            get { return new Point(StartingX, StartingY); }
         }
 
         public Point(int x, int y)
@@ -28,34 +32,38 @@ namespace Tetris
             Y = y;
         }
 
-        public void SetCursorPosition(Point point)
+        public Point()
         {
-            Console.SetCursorPosition(point.X, point.Y);
+            X = Point.StartingX;
+            Y = Point.StartingY;
         }
-        public void UpdatePosition(int xAmount, int yAmount, char character)
-        {
-            X += xAmount;
-            Y += yAmount;
-            SetCursorPosition(this);
-            Console.WriteLine(character);
-        }
-        public void UpdatePosition(int xAmount, int yAmount)
-        {
-            X += xAmount;
-            Y += yAmount;
-            SetCursorPosition(this);
-        }
+
         public void SetPositionToStartingPoint()
         {
             X = StartingX;
             Y = StartingY;
         }
-        public void SetPosition(int x, int y)
+
+        public static List<Point> GetListOfPoints(bool[,] pieceData, Point startingPoint)
         {
-            X = x;
-            Y = y;
-            SetCursorPosition(this);
+            List<Point> listOfPoints = new();
+            for (int i = 0; i < pieceData.GetLength(0); i++)
+            {
+                for (int j = 0; j < pieceData.GetLength(1); j++)
+                {
+                    var condition = pieceData[i, j];
+
+                    if (!condition) continue;
+
+                    listOfPoints.Add(new Point(startingPoint.X + j, startingPoint.Y + i));
+                }
+            }
+            return listOfPoints;
         }
 
+        public Point Clone()
+        {
+            return new Point(X, Y);
+        }
     }
 }

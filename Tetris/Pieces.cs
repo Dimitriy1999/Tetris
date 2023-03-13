@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,15 +9,23 @@ namespace Tetris
 {
     internal class Pieces
     {
+
+        public static int PieceWidth { get; private set; }
+
         public static List<bool[,]> AllPieces = new List<bool[,]>();
         public static bool[,] PlacedPieces = new bool[100, 100];
 
+        public static List<bool[,]> IgnoreRotationList = new List<bool[,]>();
         public static void Initalize()
         {
             AllPieces.Add(longPiece);
             AllPieces.Add(square);
             AllPieces.Add(tShape);
             AllPieces.Add(zShape);
+            AllPieces.Add(JBlock);
+            AllPieces.Add(LBlock);
+            AllPieces.Add(SBlock);
+            IgnoreRotationList.Add(square);
         }
 
 
@@ -30,9 +39,9 @@ namespace Tetris
 
         private static bool[,] square = new[,]
         {
+            { false, true, true, false},
+            { false, true, true, false},
             { false, false, false, false},
-            { false, true, true, false},
-            { false, true, true, false},
             { false, false, false, false}
         };
 
@@ -49,49 +58,54 @@ namespace Tetris
             { true, true, false, false},
             { false, true, true, false},
             { false, false, false, false},
-            { false, false, false, false}
+            { false, false, false, false},
         };
 
-        //remember to change index from 0 to randomNumber.
+        private static bool[,] JBlock = new[,]
+        {
+            { true, false, false, false},
+            { true, true, true, false},
+            { false, false, false, false},
+            { false, false, false, false},
+        };
+
+        private static bool[,] LBlock = new[,]
+        {
+            { false, false, false, true},
+            { false, true, true, true},
+            { false, false, false, false},
+            { false, false, false, false},
+        };
+
+        private static bool[,] SBlock = new[,]
+       {
+            { false, false, true, true},
+            { false, true, true, false},
+            { false, false, false, false},
+            { false, false, false, false},
+        };
+
+
         public static bool[,] GetRandomPiece()
         {
             Random random = new Random();
             int randomNumber = random.Next(0, Pieces.AllPieces.Count);
-            return Pieces.AllPieces[0];
+            return Pieces.AllPieces[randomNumber];
         }
-        public static void RenderPiece(bool[,] pieceData, IPoint point, ref List<IPoint> points)
+
+        public static void RenderPiece(bool[,] pieceData, Point startingPoint)
         {
-            points.Clear();
-            int startX = point.X;
-            int startY = point.Y;
-            int yOffset = 0;
             for (int i = 0; i < pieceData.GetLength(0); i++)
             {
-                point.SetPosition(startX, startY + yOffset);
-                bool hasPrinted = false;
-
                 for (int j = 0; j < pieceData.GetLength(1); j++)
                 {
                     bool condition = pieceData[i, j];
 
-                    if (!condition)
-                    {
-                        point.UpdatePosition(1, 0);
-                        continue;
-                    }
+                    if (!condition) continue;
 
-                    point.UpdatePosition(1, 0, '*');
-                    hasPrinted = true;
-                    points.Add(new Point(point.X, point.Y));
-                }
-
-                if (hasPrinted)
-                {
-                    yOffset++;
-                    point.UpdatePosition(-pieceData.GetLength(1), 1);
+                    Utility.DrawCharacter(startingPoint.X + j, startingPoint.Y + i, Game.PieceChar);
                 }
             }
         }
-
     }
 }
